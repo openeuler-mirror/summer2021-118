@@ -1,0 +1,75 @@
+diff -uNr logstash-7.10.0/bin/logstash.lib.sh logstash-7.10.0-new/bin/logstash.lib.sh
+--- logstash-7.10.0/bin/logstash.lib.sh	2020-11-03 05:28:31.000000000 +0800
++++ logstash-7.10.0-new/bin/logstash.lib.sh	2021-07-30 11:14:21.671821330 +0800
+@@ -85,6 +85,7 @@
+   # set the path to java into JAVACMD which will be picked up by JRuby to launch itself
+   if [ -z "$JAVACMD" ]; then
+     setup_bundled_jdk_part
++    JAVA_HOME="/usr/lib/jvm/jre-11-openjdk"
+     JAVACMD_TEST=`command -v java`
+     if [ -n "$JAVA_HOME" ]; then
+       echo "Using JAVA_HOME defined java: ${JAVA_HOME}"
+diff -uNr logstash-7.10.0/build.gradle logstash-7.10.0-new/build.gradle
+--- logstash-7.10.0/build.gradle	2020-11-03 05:28:31.000000000 +0800
++++ logstash-7.10.0-new/build.gradle	2021-07-30 11:14:21.664821431 +0800
+@@ -19,9 +19,14 @@
+ 
+ buildscript {
+     repositories {
+-        mavenCentral()
+         maven {
+-            url 'https://plugins.gradle.org/m2/'
++            url 'https://maven.aliyun.com/repository/central'
++        }
++        maven {
++            url 'https://maven.aliyun.com/repository/jcenter'
++        }
++        maven {
++            url 'https://maven.aliyun.com/repository/gradle-plugin'
+         }
+     }
+     dependencies {
+diff -uNr logstash-7.10.0/config/logstash.yml logstash-7.10.0-new/config/logstash.yml
+--- logstash-7.10.0/config/logstash.yml	2020-11-03 05:28:31.000000000 +0800
++++ logstash-7.10.0-new/config/logstash.yml	2021-07-30 11:14:21.669821359 +0800
+@@ -25,7 +25,7 @@
+ # Which directory should be used by logstash and its plugins
+ # for any persistent needs. Defaults to LOGSTASH_HOME/data
+ #
+-# path.data:
++path.data: /var/lib/logstash
+ #
+ # ------------ Pipeline Settings --------------
+ #
+@@ -246,7 +246,7 @@
+ #   * trace
+ #
+ # log.level: info
+-# path.logs:
++path.logs: /var/log/logstash
+ #
+ # ------------ Other Settings --------------
+ #
+diff -uNr logstash-7.10.0/config/pipelines.yml logstash-7.10.0-new/config/pipelines.yml
+--- logstash-7.10.0/config/pipelines.yml	2020-11-03 05:28:31.000000000 +0800
++++ logstash-7.10.0-new/config/pipelines.yml	2021-07-30 11:14:21.668821373 +0800
+@@ -84,3 +84,8 @@
+ #   Default is path.data/dead_letter_queue
+ #
+ #   path.dead_letter_queue:
++
++# For more information on multiple pipelines, see the documentation:
++#   https://www.elastic.co/guide/en/logstash/current/multiple-pipelines.html
++- pipeline.id: main
++  path.config: "/etc/logstash/conf.d/*.conf"
+diff -uNr logstash-7.10.0/rakelib/artifacts.rake logstash-7.10.0-new/rakelib/artifacts.rake
+--- logstash-7.10.0/rakelib/artifacts.rake	2020-11-03 05:28:31.000000000 +0800
++++ logstash-7.10.0-new/rakelib/artifacts.rake	2021-07-30 11:14:21.666821402 +0800
+@@ -153,7 +153,6 @@
+   end
+ 
+   def create_single_archive_pack(os_name, arch, license_details)
+-    system("./gradlew copyJdk -Pjdk_bundle_os=#{os_name} -Pjdk_arch=#{arch}")
+     if arch == 'arm64'
+       arch = 'aarch64'
+     end
