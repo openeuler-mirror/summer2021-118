@@ -1,0 +1,190 @@
+diff -uNr elasticsearch-7.9.0-bak/buildSrc/src/main/java/org/elasticsearch/gradle/ElasticsearchJavaPlugin.java elasticsearch-7.9.0/buildSrc/src/main/java/org/elasticsearch/gradle/ElasticsearchJavaPlugin.java
+--- elasticsearch-7.9.0-bak/buildSrc/src/main/java/org/elasticsearch/gradle/ElasticsearchJavaPlugin.java	2020-08-12 00:42:47.000000000 +0800
++++ elasticsearch-7.9.0/buildSrc/src/main/java/org/elasticsearch/gradle/ElasticsearchJavaPlugin.java	2021-07-30 15:19:21.974328750 +0800
+@@ -166,7 +166,6 @@
+                 // don't even think about passing args with -J-xxx, oracle will ask you to submit a bug report :)
+                 // fail on all javac warnings
+                 List<String> compilerArgs = compileOptions.getCompilerArgs();
+-                compilerArgs.add("-Werror");
+                 compilerArgs.add("-Xlint:all,-path,-serial,-options,-deprecation,-try");
+                 compilerArgs.add("-Xdoclint:all");
+                 compilerArgs.add("-Xdoclint:-missing");
+diff -uNr elasticsearch-7.9.0-bak/buildSrc/src/main/resources/minimumCompilerVersion elasticsearch-7.9.0/buildSrc/src/main/resources/minimumCompilerVersion
+--- elasticsearch-7.9.0-bak/buildSrc/src/main/resources/minimumCompilerVersion	2020-08-12 00:42:47.000000000 +0800
++++ elasticsearch-7.9.0/buildSrc/src/main/resources/minimumCompilerVersion	2021-07-30 15:19:21.960245644 +0800
+@@ -1 +1 @@
+-14
++11
+diff -uNr elasticsearch-7.9.0-bak/distribution/packages/build.gradle elasticsearch-7.9.0/distribution/packages/build.gradle
+--- elasticsearch-7.9.0-bak/distribution/packages/build.gradle	2020-08-12 00:42:47.000000000 +0800
++++ elasticsearch-7.9.0/distribution/packages/build.gradle	2021-07-30 15:19:21.981911962 +0800
+@@ -405,7 +405,7 @@
+ }
+ 
+ tasks.register('buildAarch64Rpm', Rpm) {
+-  configure(commonRpmConfig(false, true, 'aarch64'))
++  configure(commonRpmConfig(false, false, 'aarch64'))
+ }
+ 
+ tasks.register('buildRpm', Rpm) {
+diff -uNr elasticsearch-7.9.0-bak/distribution/packages/src/common/env/elasticsearch elasticsearch-7.9.0/distribution/packages/src/common/env/elasticsearch
+--- elasticsearch-7.9.0-bak/distribution/packages/src/common/env/elasticsearch	2020-08-12 00:42:47.000000000 +0800
++++ elasticsearch-7.9.0/distribution/packages/src/common/env/elasticsearch	2021-07-30 15:19:21.986245226 +0800
+@@ -6,14 +6,14 @@
+ #ES_HOME=/usr/share/elasticsearch
+ 
+ # Elasticsearch Java path
+-#JAVA_HOME=
++JAVA_HOME=/usr/lib/jvm/jre-11-openjdk
+ 
+ # Elasticsearch configuration directory
+ # Note: this setting will be shared with command-line tools
+-ES_PATH_CONF=${path.conf}
++ES_PATH_CONF=/etc/elasticsearch
+ 
+ # Elasticsearch PID directory
+-#PID_DIR=/var/run/elasticsearch
++PID_DIR=/var/run/elasticsearch
+ 
+ # Additional Java OPTS
+ #ES_JAVA_OPTS=
+diff -uNr elasticsearch-7.9.0-bak/distribution/packages/src/common/systemd/elasticsearch.service elasticsearch-7.9.0/distribution/packages/src/common/systemd/elasticsearch.service
+--- elasticsearch-7.9.0-bak/distribution/packages/src/common/systemd/elasticsearch.service	2020-08-12 00:42:47.000000000 +0800
++++ elasticsearch-7.9.0/distribution/packages/src/common/systemd/elasticsearch.service	2021-07-30 15:19:21.979745330 +0800
+@@ -9,10 +9,10 @@
+ RuntimeDirectory=elasticsearch
+ PrivateTmp=true
+ Environment=ES_HOME=/usr/share/elasticsearch
+-Environment=ES_PATH_CONF=${path.conf}
++Environment=ES_PATH_CONF=/etc/elasticsearch
+ Environment=PID_DIR=/var/run/elasticsearch
+ Environment=ES_SD_NOTIFY=true
+-EnvironmentFile=-${path.env}
++EnvironmentFile=-/etc/sysconfig/elasticsearch
+ 
+ WorkingDirectory=/usr/share/elasticsearch
+ 
+diff -uNr elasticsearch-7.9.0-bak/distribution/packages/src/rpm/init.d/elasticsearch elasticsearch-7.9.0/distribution/packages/src/rpm/init.d/elasticsearch
+--- elasticsearch-7.9.0-bak/distribution/packages/src/rpm/init.d/elasticsearch	2020-08-12 00:42:47.000000000 +0800
++++ elasticsearch-7.9.0/distribution/packages/src/rpm/init.d/elasticsearch	2021-07-30 15:19:21.979745330 +0800
+@@ -35,12 +35,12 @@
+ ES_HOME="/usr/share/elasticsearch"
+ MAX_OPEN_FILES=65535
+ MAX_MAP_COUNT=262144
+-ES_PATH_CONF="${path.conf}"
++ES_PATH_CONF="/etc/elasticsearch"
+ 
+ PID_DIR="/var/run/elasticsearch"
+ 
+ # Source the default env file
+-ES_ENV_FILE="${path.env}"
++ES_ENV_FILE="/etc/sysconfig/elasticsearch"
+ if [ -f "$ES_ENV_FILE" ]; then
+     . "$ES_ENV_FILE"
+ fi
+@@ -101,7 +101,7 @@
+ stop() {
+     echo -n $"Stopping $prog: "
+     # stop it here, often "killproc $prog"
+-    killproc -p $pidfile -d ${stopping.timeout} $prog
++    killproc -p $pidfile -d 86400 $prog
+     retval=$?
+     echo
+     [ $retval -eq 0 ] && rm -f $lockfile
+diff -uNr elasticsearch-7.9.0-bak/distribution/src/bin/elasticsearch-env elasticsearch-7.9.0/distribution/src/bin/elasticsearch-env
+--- elasticsearch-7.9.0-bak/distribution/src/bin/elasticsearch-env	2020-08-12 00:42:47.000000000 +0800
++++ elasticsearch-7.9.0/distribution/src/bin/elasticsearch-env	2021-07-30 15:19:21.979745330 +0800
+@@ -35,6 +35,10 @@
+ # now set the classpath
+ ES_CLASSPATH="$ES_HOME/lib/*"
+ 
++if [ -f '/etc/sysconfig/elasticsearch' ]; then
++  source "/etc/sysconfig/elasticsearch"
++fi
++
+ # now set the path to java
+ if [ ! -z "$JAVA_HOME" ]; then
+   JAVA="$JAVA_HOME/bin/java"
+@@ -78,8 +82,6 @@
+ 
+ export HOSTNAME=$HOSTNAME
+ 
+-${source.path.env}
+-
+ if [ -z "$ES_PATH_CONF" ]; then
+   echo "ES_PATH_CONF must be set to the configuration path"
+   exit 1
+diff -uNr elasticsearch-7.9.0-bak/distribution/src/config/elasticsearch.yml elasticsearch-7.9.0/distribution/src/config/elasticsearch.yml
+--- elasticsearch-7.9.0-bak/distribution/src/config/elasticsearch.yml	2020-08-12 00:42:47.000000000 +0800
++++ elasticsearch-7.9.0/distribution/src/config/elasticsearch.yml	2021-07-30 15:19:21.979745330 +0800
+@@ -30,11 +30,11 @@
+ #
+ # Path to directory where to store the data (separate multiple locations by comma):
+ #
+-${path.data}
++path.data: /var/lib/elasticsearch
+ #
+ # Path to log files:
+ #
+-${path.logs}
++path.logs: /var/log/elasticsearch
+ #
+ # ----------------------------------- Memory -----------------------------------
+ #
+diff -uNr elasticsearch-7.9.0-bak/distribution/src/config/jvm.options elasticsearch-7.9.0/distribution/src/config/jvm.options
+--- elasticsearch-7.9.0-bak/distribution/src/config/jvm.options	2020-08-12 00:42:47.000000000 +0800
++++ elasticsearch-7.9.0/distribution/src/config/jvm.options	2021-07-30 15:19:21.979745330 +0800
+@@ -58,20 +58,20 @@
+ 
+ # specify an alternative path for heap dumps; ensure the directory exists and
+ # has sufficient space
+-${heap.dump.path}
++-XX:HeapDumpPath=/var/lib/elasticsearch
+ 
+ # specify an alternative path for JVM fatal error logs
+-${error.file}
++-XX:ErrorFile=/var/log/elasticsearch/hs_err_pid%p.log
+ 
+ ## JDK 8 GC logging
+ 8:-XX:+PrintGCDetails
+ 8:-XX:+PrintGCDateStamps
+ 8:-XX:+PrintTenuringDistribution
+ 8:-XX:+PrintGCApplicationStoppedTime
+-8:-Xloggc:${loggc}
++8:-Xloggc:/var/log/elasticsearch/gc.log
+ 8:-XX:+UseGCLogFileRotation
+ 8:-XX:NumberOfGCLogFiles=32
+ 8:-XX:GCLogFileSize=64m
+ 
+ # JDK 9+ GC logging
+-9-:-Xlog:gc*,gc+age=trace,safepoint:file=${loggc}:utctime,pid,tags:filecount=32,filesize=64m
++9-:-Xlog:gc*,gc+age=trace,safepoint:file=/var/log/elasticsearch/gc.log:utctime,pid,tags:filecount=32,filesize=64m
+diff -uNr elasticsearch-7.9.0-bak/gradle/ide.gradle elasticsearch-7.9.0/gradle/ide.gradle
+--- elasticsearch-7.9.0-bak/gradle/ide.gradle	2020-08-12 00:42:47.000000000 +0800
++++ elasticsearch-7.9.0/gradle/ide.gradle	2021-07-30 15:19:21.977578698 +0800
+@@ -5,7 +5,13 @@
+ buildscript {
+   repositories {
+     maven {
+-      url "https://plugins.gradle.org/m2/"
++      url 'https://maven.aliyun.com/repository/central'
++    }
++    maven {
++      url 'https://maven.aliyun.com/repository/jcenter'
++    }
++    maven {
++      url 'https://maven.aliyun.com/repository/gradle-plugin'
+     }
+   }
+   dependencies {
+diff -uNr elasticsearch-7.9.0-bak/x-pack/plugin/core/build.gradle elasticsearch-7.9.0/x-pack/plugin/core/build.gradle
+--- elasticsearch-7.9.0-bak/x-pack/plugin/core/build.gradle	2020-08-12 00:42:47.000000000 +0800
++++ elasticsearch-7.9.0/x-pack/plugin/core/build.gradle	2021-07-30 15:19:21.984078594 +0800
+@@ -84,6 +84,7 @@
+   } else {
+     throw new IllegalArgumentException('Property license.key must be set for release build')
+   }
++  licenseKey = Paths.get(project.projectDir.path, 'snapshot.key')
+   if (Files.exists(Paths.get(licenseKey)) == false) {
+     throw new IllegalArgumentException('license.key at specified path [' + licenseKey + '] does not exist')
+   }
