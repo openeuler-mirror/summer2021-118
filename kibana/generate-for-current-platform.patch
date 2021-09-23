@@ -1,0 +1,24 @@
+diff --git a/package.json b/package.json
+index b3676152..721a42de 100644
+--- a/package.json
++++ b/package.json
+@@ -53,7 +53,7 @@
+     "test:coverage": "grunt test:coverage",
+     "typespec": "typings-tester --config x-pack/plugins/canvas/public/lib/aeroelastic/tsconfig.json x-pack/plugins/canvas/public/lib/aeroelastic/__fixtures__/typescript/typespec_tests.ts",
+     "checkLicenses": "node scripts/check_licenses --dev",
+-    "build": "node scripts/build --all-platforms",
++    "build": "node scripts/build",
+     "start": "node scripts/kibana --dev",
+     "debug": "node --nolazy --inspect scripts/kibana --dev",
+     "debug-break": "node --nolazy --inspect-brk scripts/kibana --dev",
+@@ -448,7 +448,6 @@
+     "gulp-babel": "^8.0.0",
+     "gulp-sourcemaps": "2.6.5",
+     "has-ansi": "^3.0.0",
+-    "iedriver": "^3.14.2",
+     "intl-messageformat-parser": "^1.4.0",
+     "is-path-inside": "^2.1.0",
+     "istanbul-instrumenter-loader": "3.0.1",
+-- 
+2.20.1
+
