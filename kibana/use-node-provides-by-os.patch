@@ -1,0 +1,42 @@
+diff --git a/src/dev/build/tasks/bin/scripts/kibana b/src/dev/build/tasks/bin/scripts/kibana
+index 3283e170..08be85ce 100755
+--- a/src/dev/build/tasks/bin/scripts/kibana
++++ b/src/dev/build/tasks/bin/scripts/kibana
+@@ -15,7 +15,7 @@ done
+ 
+ DIR="$(dirname "${SCRIPT}")/.."
+ CONFIG_DIR=${KIBANA_PATH_CONF:-"$DIR/config"}
+-NODE="${DIR}/node/bin/node"
++NODE="$(which node)"
+ test -x "$NODE"
+ if [ ! -x "$NODE" ]; then
+   echo "unable to find usable node.js executable."
+diff --git a/src/dev/build/tasks/bin/scripts/kibana-keystore b/src/dev/build/tasks/bin/scripts/kibana-keystore
+index d811e700..d37cdbb1 100755
+--- a/src/dev/build/tasks/bin/scripts/kibana-keystore
++++ b/src/dev/build/tasks/bin/scripts/kibana-keystore
+@@ -15,7 +15,7 @@ done
+ 
+ DIR="$(dirname "${SCRIPT}")/.."
+ CONFIG_DIR=${KBN_PATH_CONF:-"$DIR/config"}
+-NODE="${DIR}/node/bin/node"
++NODE="$(which node)"
+ test -x "$NODE"
+ if [ ! -x "$NODE" ]; then
+   echo "unable to find usable node.js executable."
+diff --git a/src/dev/build/tasks/bin/scripts/kibana-plugin b/src/dev/build/tasks/bin/scripts/kibana-plugin
+index f4486e9c..80b5f27c 100755
+--- a/src/dev/build/tasks/bin/scripts/kibana-plugin
++++ b/src/dev/build/tasks/bin/scripts/kibana-plugin
+@@ -15,7 +15,7 @@ done
+ 
+ DIR="$(dirname "${SCRIPT}")/.."
+ CONFIG_DIR=${KBN_PATH_CONF:-"$DIR/config"}
+-NODE="${DIR}/node/bin/node"
++NODE="$(which node)"
+ test -x "$NODE"
+ if [ ! -x "$NODE" ]; then
+   echo "unable to find usable node.js executable."
+-- 
+2.20.1
+
