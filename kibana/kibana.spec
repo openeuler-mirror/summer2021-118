@@ -35,7 +35,6 @@ query load to understanding the way requests flow through your apps.
 
 %prep
 %autosetup -p1
-exit 0
 # use the version of node in the system to replace the node version in sources
 node -v | sed -r 's/[a-zA-Z\-_]//g' >.node-version
 sed -ri '/"node"/s/(^.*\"node\": \").*(\".*$)/\1'$(cat .node-version)'\2/' package.json
